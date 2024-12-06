@@ -4946,10 +4946,17 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
 	bool streamQuality = qual == "Stream";
+	bool highQuality = qual == "Small";
+	bool indistQuality = qual == "HQ";
 	int abitrate = 0;
+
 
 	ui->simpleRBMegsMax->setVisible(!streamQuality);
 	ui->simpleRBMegsMaxLabel->setVisible(!streamQuality);
+	ui->simpleRBMegsMax->setVisible(!highQuality);
+	ui->simpleRBMegsMaxLabel->setVisible(!highQuality);
+	ui->simpleRBMegsMax->setVisible(!indistQuality);
+	ui->simpleRBMegsMaxLabel->setVisible(!indistQuality);
 
 	if (ui->simpleOutRecFormat->currentText().compare("flv") == 0 || streamQuality) {
 		abitrate = ui->simpleOutputABitrate->currentText().toInt();
@@ -4974,14 +4981,42 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 
 	// Set maximum to 75% of installed memory
 	uint64_t memTotal = os_get_sys_total_size();
+	
 	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
 
+	//formula for streamQuality 
+	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
+
+	//formula for smallQuality
+	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
+
+	//formula for highQuality
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
 	if (memMB < 1)
 		memMB = 1;
 
 	ui->simpleRBEstimate->setObjectName("");
 	if (streamQuality) {
+		if (memMB <= memMaxMB) {
+			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+		} else {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
+			ui->simpleRBEstimate->setProperty("class", "text-warning");
+		}
+	} 
+	if (highQuality){
+		if (memMB <= memMaxMB) {
+			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+		} else {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
+			ui->simpleRBEstimate->setProperty("class", "text-warning");
+		}
+	}
+	if (indistQuality){
 		if (memMB <= memMaxMB) {
 			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
 		} else {
