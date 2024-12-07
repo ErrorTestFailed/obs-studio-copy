@@ -4948,15 +4948,12 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	bool streamQuality = qual == "Stream";
 	bool highQuality = qual == "Small";
 	bool indistQuality = qual == "HQ";
+	bool lossQuality = qual == "Lossless";
 	int abitrate = 0;
 
 
-	ui->simpleRBMegsMax->setVisible(!streamQuality);
-	ui->simpleRBMegsMaxLabel->setVisible(!streamQuality);
-	ui->simpleRBMegsMax->setVisible(!highQuality);
-	ui->simpleRBMegsMaxLabel->setVisible(!highQuality);
-	ui->simpleRBMegsMax->setVisible(!indistQuality);
-	ui->simpleRBMegsMaxLabel->setVisible(!indistQuality);
+	ui->simpleRBMegsMax->setVisible(lossQuality);
+	ui->simpleRBMegsMaxLabel->setVisible(lossQuality);
 
 	if (ui->simpleOutRecFormat->currentText().compare("flv") == 0 || streamQuality) {
 		abitrate = ui->simpleOutputABitrate->currentText().toInt();
@@ -4987,11 +4984,11 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	//formula for streamQuality 
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
 
-	//formula for smallQuality
-	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
-
 	//formula for highQuality
-	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
+	int64_t memMBHQ = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
+
+	//formula for indistQuality
+	int64_t memMBIQ = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
 	if (memMB < 1)
 		memMB = 1;
 
@@ -5007,25 +5004,26 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 		}
 	} 
 	if (highQuality){
-		if (memMB <= memMaxMB) {
-			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+		if (memMBHQ <= memMaxMB) {
+			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMBHQ))));
 		} else {
 			ui->simpleRBEstimate->setText(
 				QTStr(ESTIMATE_TOO_LARGE_STR)
-					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
+					.arg(QString::number(int(memMBHQ)), QString::number(int(memMaxMB))));
 			ui->simpleRBEstimate->setProperty("class", "text-warning");
 		}
 	}
 	if (indistQuality){
-		if (memMB <= memMaxMB) {
-			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+		if (memMBIQ <= memMaxMB) {
+			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMBIQ))));
 		} else {
 			ui->simpleRBEstimate->setText(
 				QTStr(ESTIMATE_TOO_LARGE_STR)
-					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
+					.arg(QString::number(int(memMBIQ)), QString::number(int(memMaxMB))));
 			ui->simpleRBEstimate->setProperty("class", "text-warning");
 		}
-	} else {
+	}
+	if(lossQuality) {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 		ui->simpleRBMegsMax->setMaximum(memMaxMB);
 	}
